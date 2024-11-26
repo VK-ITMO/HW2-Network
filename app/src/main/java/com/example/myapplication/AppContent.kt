@@ -1,7 +1,7 @@
 package com.example.myapplication
 
-import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +73,8 @@ fun AppContent() {
         mutableStateListOf()
     }
 
+    var fullScreenLoaderIndex by remember { mutableIntStateOf(-1) }
+
     val scope = rememberCoroutineScope()
 
     var showErrorMessage by remember { mutableStateOf(false) }
@@ -115,37 +118,42 @@ fun AppContent() {
 
                 items(items = links, key = null) { imageLink ->
                     val index = links.indexOf(imageLink)
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (imageError.getOrNull(index) == true) {
-
-                            ErrorLoadingPhoto(Modifier.align(Alignment.Center),
-                                retryLoad = {
-                                    imageError[index] = false
+                    if (fullScreenLoaderIndex == -1 || fullScreenLoaderIndex == index) {
+                        Box(
+                            modifier = Modifier.fillMaxSize()
+                                .padding(8.dp).clickable {
+                                    if (imageLoaded[index]) {
+                                        fullScreenLoaderIndex = if (fullScreenLoaderIndex == index) -1 else index
+                                    }
                                 },
-                                deletePhoto = {
-                                    imageError.removeAt(index)
-                                    imageLoaded.removeAt(index)
-                                    links.removeAt(index)
-                                })
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (imageError.getOrNull(index) == true) {
 
-                        } else {
-                            if (imageLoaded.getOrNull(index) == false) {
-                                CircularProgressIndicator()
+                                ErrorLoadingPhoto(Modifier.align(Alignment.Center),
+                                    retryLoad = {
+                                        imageError[index] = false
+                                    },
+                                    deletePhoto = {
+                                        imageError.removeAt(index)
+                                        imageLoaded.removeAt(index)
+                                        links.removeAt(index)
+                                    })
+
+                            } else {
+                                if (imageLoaded.getOrNull(index) == false) {
+                                    CircularProgressIndicator()
+                                }
+
+
+                                AsyncImage(
+                                    model = imageLink,
+                                    contentDescription = null,
+                                    onSuccess = { imageLoaded[index] = true },
+                                    onError = { imageError[index] = true },
+                                    modifier = Modifier.fillMaxSize(),
+                                )
                             }
-
-
-                            AsyncImage(
-                                model = imageLink,
-                                contentDescription = null,
-                                onSuccess = { imageLoaded[index] = true },
-                                onError = { imageError[index] = true }
-                            )
                         }
                     }
 
@@ -169,9 +177,10 @@ fun AppContent() {
                                     links.add(photo.url)
                                     imageLoaded.add(false)
                                     imageError.add(false)
+
                                 }
 //                                Log.i("LoadPic", "${links.size} Now in Links")
-                            }else{
+                            } else {
                                 showErrorMessage = true
 //                                Log.e("LoadPic", "No Success from api. ${newPhotos.exceptionOrNull().toString()}")
 
@@ -193,9 +202,10 @@ fun AppContent() {
                                 links.add("https://cataas.com/cat/${newGifs.getOrNull()!!.id}")
                                 imageLoaded.add(false)
                                 imageError.add(false)
-//                                Log.i("LoadPic", "${links.size} Now in Links")
-                            }else{
+                            //                                Log.i("LoadPic", "${links.size} Now in Links")
+                            } else {
                                 showErrorMessage = true
+
 //                                Log.e("LoadPic", "No Success from api. ${newGifs.exceptionOrNull().toString()}")
                             }
                         }
@@ -258,10 +268,16 @@ fun ErrorLoadingPhoto(
 @Preview(showSystemUi = true)
 @Composable
 fun ErrorApiRequest() {
-    Box(modifier = Modifier.fillMaxSize().padding(30.dp),
-        contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(30.dp),
+        contentAlignment = Alignment.Center
+    ) {
         Box(
-            modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color.Cyan),
+            modifier = Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.Cyan),
             contentAlignment = Alignment.Center,
 
             ) {
@@ -270,7 +286,8 @@ fun ErrorApiRequest() {
                 text = "An error occurred while accessing the network.\nPlease try again later.",
                 textAlign = TextAlign.Center,
                 fontSize = 30.sp,
+
             )
         }
-}
+    }
 }

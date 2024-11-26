@@ -7,7 +7,7 @@ import retrofit2.HttpException
 import retrofit2.Retrofit
 import java.io.IOException
 
-class CatsPhotoController(){
+class CatsPhotoController() {
 
     private val api = Retrofit.Builder()
         .baseUrl("https://api.thecatapi.com/")

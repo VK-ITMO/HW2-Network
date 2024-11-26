@@ -8,7 +8,7 @@ import retrofit2.Retrofit
 import java.io.IOException
 
 
-class CatsGifController(){
+class CatsGifController() {
 
     private val api = Retrofit.Builder()
         .baseUrl("https://cataas.com/")
