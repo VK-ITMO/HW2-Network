@@ -20,10 +20,15 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val catsPhotoController = CatsPhotoController()
@@ -67,6 +73,8 @@ fun AppContent() {
     }
 
     val scope = rememberCoroutineScope()
+
+    var showErrorMessage by remember { mutableStateOf(false) }
 
     Scaffold { innerPadding ->
 
@@ -156,15 +164,16 @@ fun AppContent() {
                         scope.launch {
                             val newPhotos = catsPhotoController.getPhoto()
                             if (newPhotos.isSuccess) {
-                                Log.i("LoadPic", "Success from api, 10 picture taken")
+//                                Log.i("LoadPic", "Success from api, 10 picture taken")
                                 for (photo in newPhotos.getOrNull()!!) {
                                     links.add(photo.url)
                                     imageLoaded.add(false)
                                     imageError.add(false)
                                 }
-                                Log.i("LoadPic", "${links.size} Now in Links")
+//                                Log.i("LoadPic", "${links.size} Now in Links")
                             }else{
-                                Log.e("LoadPic", "No Success from api. ${newPhotos.exceptionOrNull().toString()}")
+                                showErrorMessage = true
+//                                Log.e("LoadPic", "No Success from api. ${newPhotos.exceptionOrNull().toString()}")
 
                             }
                         }
@@ -180,19 +189,27 @@ fun AppContent() {
                         scope.launch {
                             val newGifs = catsGifController.getGifs()
                             if (newGifs.isSuccess) {
-                                Log.i("LoadPic", "Success from api, 1 gif taken")
+//                                Log.i("LoadPic", "Successs from api, 1 gif taken")
                                 links.add("https://cataas.com/cat/${newGifs.getOrNull()!!.id}")
                                 imageLoaded.add(false)
                                 imageError.add(false)
-                                Log.i("LoadPic", "${links.size} Now in Links")
+//                                Log.i("LoadPic", "${links.size} Now in Links")
                             }else{
-                                Log.e("LoadPic", "No Success from api. ${newGifs.exceptionOrNull().toString()}")
+                                showErrorMessage = true
+//                                Log.e("LoadPic", "No Success from api. ${newGifs.exceptionOrNull().toString()}")
                             }
                         }
                     },
                 ) {
                     Text(text = "New GIF", textAlign = TextAlign.Center)
                 }
+            }
+        }
+        if (showErrorMessage) {
+            ErrorApiRequest()
+            LaunchedEffect(Unit) {
+                delay(3000)
+                showErrorMessage = false
             }
         }
     }
@@ -236,4 +253,24 @@ fun ErrorLoadingPhoto(
 
         }
     }
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun ErrorApiRequest() {
+    Box(modifier = Modifier.fillMaxSize().padding(30.dp),
+        contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color.Cyan),
+            contentAlignment = Alignment.Center,
+
+            ) {
+            Text(
+                modifier = Modifier.padding(12.dp),
+                text = "An error occurred while accessing the network.\nPlease try again later.",
+                textAlign = TextAlign.Center,
+                fontSize = 30.sp,
+            )
+        }
+}
 }
